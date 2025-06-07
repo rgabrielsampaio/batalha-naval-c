@@ -1,63 +1,89 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-int main() {
-    int i, j;
+#define TAMANHO 10
+#define AGUA 0
+#define NAVIO 3
+#define AREA_AFETADA 5
 
-    // Cria o tabuleiro 10x10 e enche com água
-    int tabuleiro[10][10];
-    for (i = 0; i < 10; i++) {
-        for (j = 0; j < 10; j++) {
-            tabuleiro[i][j] = 0;
-        }
+void inicializaTabuleiro(int tab[TAMANHO][TAMANHO]) {
+    for (int i = 0; i < TAMANHO; i++)
+        for (int j = 0; j < TAMANHO; j++)
+            tab[i][j] = AGUA;
+}
+
+void posicionarNavio(int tab[TAMANHO][TAMANHO], int linha, int coluna, int tamanho, char direcao) {
+    for (int k = 0; k < tamanho; k++) {
+        if (direcao == 'H') tab[linha][coluna + k] = NAVIO;
+        else if (direcao == 'V') tab[linha + k][coluna] = NAVIO;
     }
+}
 
-    // === NAVIO 1 (horizontal) ===
-    int linha_navio1 = 2;
-    int coluna_navio1 = 4;
-    int tamanho_navio1 = 3;
+void criarHabilidadeCone(int cone[5][5]) {
+    for (int i = 0; i < 5; i++)
+        for (int j = 0; j < 5; j++)
+            cone[i][j] = (i == 0 && j == 2) || 
+                         (i == 1 && j >= 1 && j <= 3) || 
+                         (i == 2) ? 1 : 0;
+}
 
-    if (coluna_navio1 + tamanho_navio1 <= 10) {
-        for (j = coluna_navio1; j < coluna_navio1 + tamanho_navio1; j++) {
-            tabuleiro[linha_navio1][j] = 3;
-        }
-    } else {
-        printf("Navio 1 não cabe no tabuleiro!\n");
-    }
+void criarHabilidadeCruz(int cruz[5][5]) {
+    for (int i = 0; i < 5; i++)
+        for (int j = 0; j < 5; j++)
+            cruz[i][j] = (i == 2 || j == 2) ? 1 : 0;
+}
 
-    // === NAVIO 2 (vertical) ===
-    int linha_navio2 = 1;
-    int coluna_navio2 = 2;
-    int tamanho_navio2 = 3;
-    int pode_colocar = 1; // assume que pode, até provar o contrário
+void criarHabilidadeOctaedro(int octaedro[5][5]) {
+    for (int i = 0; i < 5; i++)
+        for (int j = 0; j < 5; j++)
+            octaedro[i][j] = (abs(i - 2) + abs(j - 2) <= 2) ? 1 : 0;
+}
 
-    if (linha_navio2 + tamanho_navio2 <= 10) {
-        for (i = linha_navio2; i < linha_navio2 + tamanho_navio2; i++) {
-            if (tabuleiro[i][coluna_navio2] != 0) {
-                pode_colocar = 0; // já tem navio nessa posição
-                break;
+void aplicarHabilidade(int tab[TAMANHO][TAMANHO], int hab[5][5], int linhaOrigem, int colOrigem) {
+    int meio = 2;
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            int l = linhaOrigem - meio + i;
+            int c = colOrigem - meio + j;
+            if (l >= 0 && l < TAMANHO && c >= 0 && c < TAMANHO) {
+                if (hab[i][j] == 1 && tab[l][c] == AGUA)
+                    tab[l][c] = AREA_AFETADA;
             }
         }
-
-        if (pode_colocar) {
-            for (i = linha_navio2; i < linha_navio2 + tamanho_navio2; i++) {
-                tabuleiro[i][coluna_navio2] = 3;
-            }
-        } else {
-            printf("Navio 2 não pode ser colocado: colisão com outro navio.\n");
-        }
-
-    } else {
-        printf("Navio 2 não cabe no tabuleiro!\n");
     }
+}
 
-    // Exibe o tabuleiro
-    printf("\nTabuleiro final:\n");
-    for (i = 0; i < 10; i++) {
-        for (j = 0; j < 10; j++) {
-            printf("%d  ", tabuleiro[i][j]);
+void exibirTabuleiro(int tab[TAMANHO][TAMANHO]) {
+    for (int i = 0; i < TAMANHO; i++) {
+        for (int j = 0; j < TAMANHO; j++) {
+            printf("%d  ", tab[i][j]);
         }
         printf("\n");
     }
+}
+
+int main() {
+    int tabuleiro[TAMANHO][TAMANHO];
+    int cone[5][5], cruz[5][5], octaedro[5][5];
+
+    inicializaTabuleiro(tabuleiro);
+
+    // Posicionar navios fixos
+    posicionarNavio(tabuleiro, 1, 1, 3, 'H'); // Horizontal
+    posicionarNavio(tabuleiro, 5, 8, 3, 'V'); // Vertical
+
+    // Criar matrizes de habilidades
+    criarHabilidadeCone(cone);
+    criarHabilidadeCruz(cruz);
+    criarHabilidadeOctaedro(octaedro);
+
+    // Aplicar habilidades em posições fixas
+    aplicarHabilidade(tabuleiro, cone, 2, 5);
+    aplicarHabilidade(tabuleiro, cruz, 7, 7);
+    aplicarHabilidade(tabuleiro, octaedro, 5, 2);
+
+    // Mostrar resultado
+    exibirTabuleiro(tabuleiro);
 
     return 0;
 }
